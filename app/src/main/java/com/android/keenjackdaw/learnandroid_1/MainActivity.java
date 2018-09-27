@@ -1,5 +1,6 @@
 package com.android.keenjackdaw.learnandroid_1;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -23,9 +24,11 @@ public class MainActivity extends AppCompatActivity {
     Question[] questions;
     Button mPrevButton;
     Button mCheatButton;
+    boolean mIsCheater;
 
     static final String KEYINDEX = "currentIndex";
     static final String TAG = "MainActivity";
+    static final int REQUESTCODECHEAT = 0;
 
     @Override
     // Bundle: A mapping from String values to various Parcelable types, used to transfer info from act to act
@@ -76,6 +79,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v){
                 currentIndex++;
                 updateQuestion(Math.abs((currentIndex) % questions.length));
+                mIsCheater = false;
             }
         });
 
@@ -102,7 +106,7 @@ public class MainActivity extends AppCompatActivity {
                 // start another act using intent, intent is a midware to connect to the android os
                 boolean answer = questions[currentIndex].ismAnswerTrue();
                 Intent intent = CheatActivity.newIntent(MainActivity.this, answer);
-                startActivity(intent);
+                startActivityForResult(intent, REQUESTCODECHEAT);
             }
         });
 
@@ -131,11 +135,16 @@ public class MainActivity extends AppCompatActivity {
     protected void checkAnswer(boolean userAnswer){
         boolean correctAnswer = questions[currentIndex].ismAnswerTrue();
         int messageId = 0;
-        if(userAnswer == correctAnswer){
-            messageId = R.string.correct_toast;
+        if(mIsCheater){
+            messageId = R.string.judgement_toast;
         }
         else{
-            messageId = R.string.incorrect_toast;
+            if(userAnswer == correctAnswer){
+                messageId = R.string.correct_toast;
+            }
+            else{
+                messageId = R.string.incorrect_toast;
+            }
         }
         Toast toast = Toast.makeText(MainActivity.this, messageId, Toast.LENGTH_SHORT);
         toast.setGravity(Gravity.TOP,0, 300);
@@ -178,5 +187,19 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy(){
         super.onDestroy();
         Log.d(TAG, "Method onDestroy() is called.");
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data){
+        if(resultCode != Activity.RESULT_OK){
+            return;
+        }
+
+        if(requestCode == REQUESTCODECHEAT){
+            if(data == null){
+                return;
+            }
+            mIsCheater = CheatActivity.wasAnswerShown(data);
+        }
     }
 }
